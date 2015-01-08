@@ -316,6 +316,35 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
                 self.$$scope.columns[column].push(card);
             });
         };
+        
+        Deckgrid.prototype.$$addElementsToColumns = function $$addElementsToColumns (elements) {
+            var self = this;
+
+            if (!this.$$scope.layout) {
+                return $log.error('angular-deckgrid: No CSS configuration found (see ' +
+                                   'https://github.com/akoenig/angular-deckgrid#the-grid-configuration)');
+            }
+
+            angular.forEach(elements, function onIteration (card, index) {
+            	index = self.$$getTotalElements();
+                var column = (index % self.$$scope.layout.columns) | 0;
+
+                if (!self.$$scope.columns[column]) {
+                    self.$$scope.columns[column] = [];
+                }
+
+                card.$index = index;
+                self.$$scope.columns[column].push(card);
+            });
+        };
+        
+        Deckgrid.prototype.$$getTotalElements = function $$getTotalElements () {
+        	var number = 0;
+            angular.forEach(this.$$scope.columns, function onIteration (value, index) {
+            	number += value.length;
+            });
+            return number;
+        };
 
         /**
          * @private
@@ -388,8 +417,15 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
             newModel = newModel || [];
             oldModel = oldModel || [];
 
-            if (!angular.equals(oldModel, newModel)) {
-                self.$$createColumns();
+            var newModelOldLength = angular.copy(newModel);
+            newModelOldLength.splice(oldModel.length);
+            
+            if(angular.equals(oldModel, newModelOldLength) && oldModel.length != 0){
+            	var elementsToAdd = angular.copy(newModel);
+            	elementsToAdd = elementsToAdd.splice(-(newModel.length - oldModel.length));
+            	self.$$addElementsToColumns(elementsToAdd);
+            }else{
+            	self.$$createColumns();
             }
         };
 
