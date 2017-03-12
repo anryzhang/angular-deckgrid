@@ -55,7 +55,7 @@ angular.module('akoenig.deckgrid').factory('DeckgridDescriptor', [
         function Descriptor () {
             this.restrict = 'AE';
 
-            this.template = '<div data-ng-repeat="column in columns" class="{{layout.classList}}">' +
+            this.template = '<div data-ng-repeat="column in columns" class="{{layout.classList}}" column="{{$index}}"  name="deckgrid">' +
                                 '<div data-ng-repeat="card in column" data-ng-include="cardTemplate"></div>' +
                             '</div>';
 
@@ -319,15 +319,42 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
         
         Deckgrid.prototype.$$addElementsToColumns = function $$addElementsToColumns (elements) {
             var self = this;
-
+            var maxColumn = {column:0, height:0}, minColumn={column:0, height:99999999};
+            var shouldBalance = false, first = false;
             if (!this.$$scope.layout) {
                 return $log.error('angular-deckgrid: No CSS configuration found (see ' +
                                    'https://github.com/akoenig/angular-deckgrid#the-grid-configuration)');
             }
-
+            angular.forEach(document.querySelectorAll("[name=deckgrid]"), function(dom) {
+                var column =  dom.getAttribute("column");
+                console.log("index", column,  dom.scrollHeight);
+                if (dom.scrollHeight > maxColumn.height) {
+                    maxColumn.height = dom.scrollHeight;
+                    maxColumn.column = column; 
+                }
+                if (dom.scrollHeight < minColumn.height) {
+                    minColumn.height = dom.scrollHeight;
+                    minColumn.column = column;
+                }
+            });
+            if (maxColumn.height - minColumn.height >= 600) {
+                shouldBalance = true;
+                first = true;
+                console.log("balance true:", minColumn);
+            }
             angular.forEach(elements, function onIteration (card, index) {
             	index = self.$$getTotalElements();
-                var column = (index % self.$$scope.layout.columns) | 0;
+                var column;
+                if (!shouldBalance) {
+                    column = (index % self.$$scope.layout.columns) | 0;
+                } else {
+                    //when balance, the first element insert into min column, and the rest's column should adjust,too.
+                    if (first)  {
+                        column =  minColumn.column;
+                        first = false;
+                    } else
+                        column = ((index - 1) % self.$$scope.layout.columns) | 0;
+                }
 
                 if (!self.$$scope.columns[column]) {
                     self.$$scope.columns[column] = [];
