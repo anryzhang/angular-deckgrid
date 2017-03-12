@@ -421,9 +421,12 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
             newModelOldLength.splice(oldModel.length);
             
             if(angular.equals(oldModel, newModelOldLength) && oldModel.length != 0){
-            	var elementsToAdd = angular.copy(newModel);
-            	elementsToAdd = elementsToAdd.splice(-(newModel.length - oldModel.length));
-            	self.$$addElementsToColumns(elementsToAdd);
+                // It's ridiculous when (newModel.length == 1 && oldModel.length == 1), elementsToAdd is not [], which leads to duplicated display
+                if (newModel.length != oldModel.length) {
+                    var elementsToAdd = angular.copy(newModel);
+                    elementsToAdd = elementsToAdd.splice(-(newModel.length - oldModel.length));
+                    self.$$addElementsToColumns(elementsToAdd);
+                }
             }else{
             	self.$$createColumns();
             }
