@@ -320,14 +320,14 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
         Deckgrid.prototype.$$addElementsToColumns = function $$addElementsToColumns (elements) {
             var self = this;
             var maxColumn = {column:0, height:0}, minColumn={column:0, height:99999999};
-            var shouldBalance = false, first = false;
+            var shouldBalance = false, fillingCount = 0, leftCount = 0;
             if (!this.$$scope.layout) {
                 return $log.error('angular-deckgrid: No CSS configuration found (see ' +
                                    'https://github.com/akoenig/angular-deckgrid#the-grid-configuration)');
             }
             angular.forEach(document.querySelectorAll("[name=deckgrid]"), function(dom) {
                 var column =  dom.getAttribute("column");
-                console.log("index", column,  dom.scrollHeight);
+                // console.log("index", column,  dom.scrollHeight);
                 if (dom.scrollHeight > maxColumn.height) {
                     maxColumn.height = dom.scrollHeight;
                     maxColumn.column = column; 
@@ -339,8 +339,8 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
             });
             if (maxColumn.height - minColumn.height >= 600) {
                 shouldBalance = true;
-                first = true;
-                console.log("balance true:", minColumn);
+                leftCount = fillingCount = Math.floor((maxColumn.height - minColumn.height) / 600);
+                // console.log("balance true:", minColumn, fillingCount);
             }
             angular.forEach(elements, function onIteration (card, index) {
             	index = self.$$getTotalElements();
@@ -349,11 +349,11 @@ angular.module('akoenig.deckgrid').factory('Deckgrid', [
                     column = (index % self.$$scope.layout.columns) | 0;
                 } else {
                     //when balance, the first element insert into min column, and the rest's column should adjust,too.
-                    if (first)  {
+                    if (leftCount)  {
                         column =  minColumn.column;
-                        first = false;
+                        --leftCount;
                     } else
-                        column = ((index - 1) % self.$$scope.layout.columns) | 0;
+                        column = ((index - fillingCount) % self.$$scope.layout.columns) | 0;
                 }
 
                 if (!self.$$scope.columns[column]) {
